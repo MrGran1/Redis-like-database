@@ -6,34 +6,12 @@ from collections import namedtuple
 from io import BytesIO
 from socket import error as socket_error
 import json
-
+from ProtocolHandler import ProtocolHandler
 # We'll use exceptions to notify the connection-handling loop of problems.
 class CommandError(Exception): pass
 class Disconnect(Exception): pass
 
 Error = namedtuple('Error', ('message',))
-
-
-class ProtocolHandler(object):
-    def __init__(self):
-        self.handlers = {
-            '+': self.handle_simple_string,
-            '-': self.handle_error,
-            ':': self.handle_integer,
-            '$': self.handle_string,
-            '*': self.handle_array,
-            '%': self.handle_dict
-            }
-
-    def handle_request(self, socket_file):
-        # Parse a request from the client into it's component parts.
-        pass
-        
-
-    def write_response(self, socket_file, data):
-        # Serialize the response data and send it to the client.
-        pass
-
 
 class Server(object):
     def __init__(self, host='127.0.0.1', port=31337, max_clients=64):
@@ -64,10 +42,31 @@ class Server(object):
 
             self._protocol.write_response(socket_file, resp)
 
-    def get_response(self, data):
-        # Here we'll actually unpack the data sent by the client, execute the
-        # command they specified, and pass back the return value.
-        pass
+    def get_commands(self):
+        return {
+            'GET': self.get,
+            'SET': self.set,
+            'DELETE': self.delete,
+            'FLUSH': self.flush,
+            'MGET': self.mget,
+            'MSET': self.mset}
 
+    def get_response(self, data):
+        if not isinstance(data, list):
+            try:
+                data = data.split()
+            except:
+                raise CommandError('Request must be list or simple string.')
+
+        if not data:
+            raise CommandError('Missing command')
+
+        command = data[0].upper()
+        if command not in self._commands:
+            raise CommandError('Unrecognized command: %s' % command)
+
+        return self._commands[command](*data[1:])
+    
+    
     def run(self):
         self._server.serve_forever()
