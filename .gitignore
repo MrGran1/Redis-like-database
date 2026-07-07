@@ -1,4 +1,4 @@
-.env
-.json
-.lock
+*.env
+*.json
+*.lock
 __pycache__
