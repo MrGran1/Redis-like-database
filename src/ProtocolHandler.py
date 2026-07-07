@@ -40,7 +40,7 @@ class ProtocolHandler(object):
         if length == -1:
             return None  # Special-case for NULLs.
         length += 2  # Include the trailing \r\n in count.
-        return socket_file.read(length)[:-2]
+        return socket_file.read(length)[:-2].decode()
 
     def handle_array(self, socket_file):
         num_elements = int((socket_file.readline().decode().rstrip('\r\n')))
